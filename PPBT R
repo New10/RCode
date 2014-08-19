@@ -16,7 +16,7 @@ library("gridExtra")
 
 
 #Functions
-source("C:/users/jcnewt/Dropbox/2015 Bayesian Football/R Codes/Functions.R")
+source()
 
 #Specify info to scrape
 years <- 2013:2013 #2011:2013
