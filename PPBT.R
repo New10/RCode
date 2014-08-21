@@ -155,7 +155,6 @@ grid.arrange(plot1, plot3, plot4, plot2, ncol=4, nrow=1)
 theplot<-arrangeGrob(plot1, plot3, plot2, ncol=3)
 
 
-ggsave(theplot,file="C:/Users/jcnewt/Dropbox/2015 Bayesian Football/R Codes/Blog Posts/WRRB.jpg",width=20,height=10, limitsize=FALSE)
 
 ##########################################################
 # Quarterbacks
@@ -232,5 +231,4 @@ grid.arrange(plot1, plot3, plot2, plot4, ncol=4, nrow=1)
 theplot2<-arrangeGrob(plot1, plot3, plot2, ncol=3)
 
 
-ggsave(theplot2,file="C:/Users/jcnewt/Dropbox/2015 Bayesian Football/R Codes/Blog Posts/QB.jpg",width=20,height=10, limitsize=FALSE)
 
