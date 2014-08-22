@@ -3,8 +3,21 @@
 ###########################
 # File: Historical Weekly.R
 # Description: Analyze Points Per Touch for QB/WR/RB
-# New10 
+# JC Newton and Isaac Petersen
 ###########################
+
+
+########################################
+#Fantasy Scoring Breakdown 
+########################################
+Yds.point <- .1 # Points per yard gains WR/RB/TE
+TD.point<-6 # Points per receiving rushing TD
+Rec.point<-0.5 # Points per reception
+#Rec.point<-0 # Points per reception
+QBTD.point<-4 #Points per QB TD
+Int.point<- -2 #Points per interception
+Pass.point<-0.04 #Points per pass yards
+Comp.point<-0.2 #Points per completion
 
 #Libraries
 library("XML")
@@ -19,7 +32,7 @@ library("gridExtra")
 source()
 
 #Specify info to scrape
-years <- 2013:2013 #2011:2013
+years <- 2012:2012 #2011:2013
 weeks <- 17
 
 #Scrape data
@@ -106,17 +119,19 @@ weeklyData <- ddply(weeklyData, c("name","year","week"), summarise,
                      rec = sum(rec))
 
 
+
+
 # Estimate Points Per Touch
 weeklyData<- transform(weeklyData,
-               Value = (rushYds*.1+ rushTds*6+recYds*.1+recTds*6),
-               PPT = (rushYds*.1+ rushTds*6+recYds*.1+recTds*6)/(rushAtt+rec),
+               Value = (rec*Rec.point+rushYds*Yds.point+ rushTds*TD.point+recYds*Yds.point+recTds*TD.point),
+               PPT = (rec*Rec.point+rushYds*Yds.point+ rushTds*TD.point+recYds*Yds.point+recTds*TD.point)/(rushAtt+rec),
                Touches = (rushAtt+rec)
               )
  
 #Subset Data
 weeklyData <- weeklyData[,c("name","year","week","rushAtt","rushYds","rushTds","rec","recYds","recTds","Value", "PPT","Touches")]
 
-weeklyData <- weeklyData[order(weeklyData2$year, weeklyData2$week, weeklyData2$name),]
+weeklyData <- weeklyData[order(weeklyData$year, weeklyData$week, weeklyData$name),]
 
 datasummary <- ddply(weeklyData, c("name"), summarise,
                     Value = sum(Value),
@@ -128,15 +143,22 @@ datasummary <- ddply(weeklyData, c("name"), summarise,
                     sdTouch = sd(Touches),
                     cvPPT = sd(PPT)/mean(PPT))
 
-
+datasummary[which(datasummary$name == "DANNYWOODHEAD" ), ]
+datasummary[which(datasummary$name == "JAMAALCHARLES" ), ]
+datasummary[which(datasummary$name == "JOIQUEBELL" ), ]
+datasummary[which(datasummary$name == "STEVENJACKSON" ), ]
+datasummary[which(datasummary$name == "SHANEVEREEN" ), ]
+datasummary[which(datasummary$name == "TOBYGERHART" ), ]
 
 
 #############################
 # Filter data
 #############################
-datasummary<-datasummary[which(datasummary$Touch >= 150), ] #You can change the number of Touches to get a larger matrix of RB/WR stats
+datasummary<-datasummary[which(datasummary$Touch >=100 & datasummary$muPPT <=1.6 & datasummary$muPPT >=.6), ] #You can change the number of Touches to get a larger matrix of RB/WR stats
 
-datasummary<-datasummary[order(datasummary$Value, decreasing = TRUE),]
+datasummary<-datasummary[order(datasummary$muPPT, decreasing = TRUE),]
+
+datasummary<-datasummary[c(1:30),]
 
 df<-data.frame(x=datasummary$name, y=cbind(datasummary$muPPT, datasummary$cvPPT, datasummary$Touch, datasummary$Value))
 df$x = factor(df$x,levels=df$x,ordered=TRUE)
@@ -147,88 +169,14 @@ plot2<-ggplot(data=df, aes(x=x, y=y.2))+geom_bar(fille="grey", colour="white", s
 
 plot3<-ggplot(data=df, aes(x=x, y=y.3))+geom_bar(fill="blue", colour="grey", stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ guides(fill=FALSE)+coord_flip() + theme(axis.text.y=element_text(size = rel(1), colour = "black"), axis.text.x=element_text(size = rel(1), colour = "black"), axis.title.x=element_text(size = rel(1)), axis.title.y=element_text(size = rel(1))) +xlab("Player")+ylab("Touches") 
 
-plot4<-ggplot(data=df, aes(x=x, y=y.4))+geom_bar(fill="orange", colour="grey", stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ guides(fill=FALSE)+coord_flip() + theme(axis.text.y=element_text(size = rel(1), colour = "black"), axis.text.x=element_text(size = rel(1), colour = "black"), axis.title.x=element_text(size = rel(1)), axis.title.y=element_text(size = rel(1))) +xlab("Player")+ylab("Est. Fantasy Points (2013)") 
-
-grid.arrange(plot1, plot3, plot4, plot2, ncol=4, nrow=1)
-
-
-theplot<-arrangeGrob(plot1, plot3, plot2, ncol=3)
-
-
-
-##########################################################
-# Quarterbacks
-###########################################################
-
-#Pass Completion %
-qbDF$passCompPct <- str_trim(sapply(str_split(qbDF$passCompPct, "\\%"), "[", 1))
-
-weeklyData <- rbind.fill(qbDF)
-
-
-#Cleanup data frames
-weeklyData <- weeklyData[-which(weeklyData$rank == "Rk"),]
-
-#Convert to numeric
-
-weeklyData[,c("rank","player","year","week","passComp","passAtt","passCompPct","passYds","passTds","passInt")] <- convert.magic(weeklyData[,c("rank","player","year","week","passComp","passAtt","passCompPct","passYds","passTds","passInt")], "numeric")
-weeklyData[is.na(weeklyData)] <- 0
-
-#sum using ddply...
-
-weeklyData <- ddply(weeklyData, c("name","year","week"), summarise,
-                    passYds    = sum(passYds),
-                    passTds = sum(passTds),
-                    passAtt = sum(passAtt),
-                    passComp= sum(passComp),
-                    passInt = sum(passInt))
-
-
-# Estimate Points Per Touch
-weeklyData<- transform(weeklyData,
-                       Value = (passYds/25+passTds*4+passInt*-2),
-                       PPT = (passYds/25+passTds*4+passInt*-2)/(passAtt),
-                       Touches = (passAtt)
-)
-
-#Subset Data
-weeklyData <- weeklyData[,c("name","year","week","passComp","passAtt","passCompPct","passYds","passTds","passInt","Value","PPT","Touches")]
-
-weeklyData <- weeklyData[order(weeklyData2$year, weeklyData2$week, weeklyData2$name),]
-
-datasummary <- ddply(weeklyData, c("name"), summarise,
-                     Value = sum(Value),
-                     Games    = length(PPT),
-                     Touch=sum(Touches),
-                     muPPT = mean(PPT),
-                     muTouch = mean(Touches),
-                     sdPPT = sd(PPT),
-                     sdTouch = sd(Touches),
-                     cvPPT = sd(PPT)/mean(PPT))
-
-#############################
-# Filter data
-#############################
-
-data1<-datasummary[which(datasummary$Touch >200 ), ]  #You can change the number of Touches to get a larger matrix of QB stats
-
-data1<-data1[order(data1$Value, decreasing = TRUE),]
-
-df<-data.frame(x=data1$name, y=cbind(data1$muPPT, data1$cvPPT, data1$Touch, data1$Value))
-df$x = factor(df$x,levels=df$x,ordered=TRUE)
-
-plot1<-ggplot(data=df, aes(x=x, y=y.1, order=y.1))+geom_bar(fill="grey",colour="white", colour="grey", stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ guides(fill=FALSE)+coord_flip()+ theme(axis.text.y=element_text(size = rel(1), colour = "black"), axis.text.x=element_text(size = rel(1), colour = "black"), axis.title.x=element_text(size = rel(1)), axis.title.y=element_text(size = rel(1))) +xlab("Player")+ylab("Points Per Touch") 
-
-plot2<-ggplot(data=df, aes(x=x, y=y.2))+geom_bar(fille="grey", colour="white", stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ guides(fill=FALSE)+coord_flip() + theme(axis.text.y=element_text(size = rel(1), colour = "black"), axis.text.x=element_text(size = rel(1), colour = "black"), axis.title.x=element_text(size = rel(1)), axis.title.y=element_text(size = rel(1))) +xlab("Player")+ylab("Coefficient of Variation (PPT)") 
-
-plot3<-ggplot(data=df, aes(x=x, y=y.3))+geom_bar(fill="blue", colour="grey", stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ guides(fill=FALSE)+coord_flip() + theme(axis.text.y=element_text(size = rel(1), colour = "black"), axis.text.x=element_text(size = rel(1), colour = "black"), axis.title.x=element_text(size = rel(1)), axis.title.y=element_text(size = rel(1))) +xlab("Player")+ylab("Touches") 
-
-plot4<-ggplot(data=df, aes(x=x, y=y.4))+geom_bar(fill="orange", colour="grey", stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ guides(fill=FALSE)+coord_flip() + theme(axis.text.y=element_text(size = rel(1), colour = "black"), axis.text.x=element_text(size = rel(1), colour = "black"), axis.title.x=element_text(size = rel(1)), axis.title.y=element_text(size = rel(1))) +xlab("Player")+ylab("Est. Fantasy Points (2013)") 
+plot4<-ggplot(data=df, aes(x=x, y=y.4))+geom_bar(fill="orange", colour="grey", stat="identity")+theme(axis.text.x = element_text(angle = 90, hjust = 1))+ guides(fill=FALSE)+coord_flip() + theme(axis.text.y=element_text(size = rel(1), colour = "black"), axis.text.x=element_text(size = rel(1), colour = "black"), axis.title.x=element_text(size = rel(1)), axis.title.y=element_text(size = rel(1))) +xlab("Player")+ylab("Est. Fantasy Points") 
 
 grid.arrange(plot1, plot3, plot2, plot4, ncol=4, nrow=1)
 
 
-theplot2<-arrangeGrob(plot1, plot3, plot2, ncol=3)
+
+
+
 
 
 
