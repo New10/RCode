@@ -1,8 +1,5 @@
 ###########################
 # File: Functions.R
-# Description: Fantasy Football Functions
-# Date: 3/3/2013
-# Original Author: Isaac Petersen (isaac@fantasyfootballanalytics.net)
 ###########################
 
 #Library
@@ -10,6 +7,29 @@ library("Rglpk")
 
 #No scientific notation
 options(scipen=999)
+
+
+
+#Function that write OLS regression on Plot
+lm_eqn = function(df){
+  m = lm(y ~ x, df);
+  
+  if (coef(m)[2] >= 0)  {    
+  eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(R)^2~"="~r2, 
+                   list(a = format(coef(m)[1], digits = 2), 
+                        b = format(abs(coef(m)[2]), digits = 2), 
+                        r2 = format(summary(m)$r.squared, digits = 3)))
+  }
+  else{
+  eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(R)^2~"="~r2, 
+                     list(a = format(coef(m)[1], digits = 2), 
+                          b = format(abs(coef(m)[2]), digits = 2), 
+                          r2 = format(summary(m)$r.squared, digits = 3))) 
+    
+  }
+  as.character(as.expression(eq));                 
+}
+
 
 #Function that takes a row sum and retains NAs when all values in the row are NA
 mySum <- function(data){
